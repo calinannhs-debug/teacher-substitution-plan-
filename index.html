@@ -9,9 +9,7 @@
 <header class="site-header">
   <div class="brand">
     <div class="logo-wrap"><img src="assets/school-logo.png" alt="Calinan National High School logo" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span class="logo-fallback">CNHS</span></div>
-    <div><p class="eyebrow">Republic of the Philippines 
-    <div><p class="eyebrow">Department of Education
-    <div><p class="eyebrow"></p><h1>Calinan National High School</h1><p class="subtitle">Teachers Substitution Management</p></div>
+    <div><p class="eyebrow">Republic of the Philippines · Department of Education</p><h1>Calinan National High School</h1><p class="subtitle">Teachers Substitution Management</p></div>
   </div>
   <div class="header-tag">SCHOOL OPERATIONS</div>
 </header>
@@ -39,7 +37,8 @@
    <label>Room <input id="room" placeholder="Room number / location"></label>
    <label>Reason / remarks <input id="remarks" placeholder="Optional notes"></label>
   </div>
-  <div class="form-actions"><button class="btn" type="submit">＋ Add assignment</button><button class="btn btn-outline" type="reset">Clear form</button></div>
+  <div class="form-actions"><button class="btn" type="submit">＋ Add assignment</button><button class="btn btn-outline" type="reset">Clear form</button><button id="downloadTemplate" class="btn btn-outline" type="button">Download Excel Template (.xlsx)</button><label class="btn btn-outline" for="excelUpload">Upload Excel Data</label><input id="excelUpload" type="file" accept=".xlsx,.xls,.csv" hidden></div>
+  <p id="uploadStatus" class="note" aria-live="polite">Upload a completed template to import multiple substitution assignments.</p>
  </form>
  <p class="note">Tip: add one row for each class or period that needs coverage. The plan below groups records by date.</p>
 </section>
@@ -53,8 +52,8 @@
 <section id="collection" class="panel collection">
  <div><p class="eyebrow">DATA COLLECTION</p><h2>Connect Microsoft Forms + Excel</h2><p>For shared collection across staff, create a Microsoft Form for substitution requests and set its responses to open in Excel. Paste the form's response link below to add it to this website.</p></div>
  <div class="form-link-row"><input id="formUrl" type="url" placeholder="Paste Microsoft Forms link (https://forms.office.com/...)"><button class="btn" id="saveFormUrl">Save form link</button></div>
- <div class="form-actions"><a id="openForm" class="btn btn-outline" href="#" target="_blank" rel="noopener">Open Microsoft Form</a><a class="btn btn-outline" href="https://r11deped-my.sharepoint.com/:f:/g/personal/304354_r11_deped_gov_ph/IgCXS7fvXKMmRoqpwx4xHP2DAYsS5hLPniPfk6zXk8MgXD0?e=47hPed" target="_blank" rel="noopener">Open SharePoint Database</a><button id="downloadTemplate" class="btn btn-outline">Download Excel Template (.xlsx)</button></div>
- <div class="upload-box"><div><h3>Upload teachers' Excel file</h3><p class="note">Choose an .xlsx, .xls, or .csv file using the template columns. Imported rows are added to this browser's records.</p></div><label class="btn" for="excelUpload">Choose Excel file</label><input id="excelUpload" type="file" accept=".xlsx,.xls,.csv" hidden><span id="uploadStatus" class="upload-status" aria-live="polite">No file selected</span></div>
+ <div class="form-actions"><a id="openForm" class="btn btn-outline" href="#" target="_blank" rel="noopener">Open Microsoft Form</a><a class="btn btn-outline" href="https://r11deped-my.sharepoint.com/:f:/g/personal/304354_r11_deped_gov_ph/IgCXS7fvXKMmRoqpwx4xHP2DAYsS5hLPniPfk6zXk8MgXD0?e=47hPed" target="_blank" rel="noopener">Open SharePoint Database</a></div>
+ 
  <p class="note">The SharePoint link opens the school's shared folder. This static GitHub Pages website cannot directly read or write that protected SharePoint folder or automatically sync uploads to it. For live shared database syncing, an administrator must configure Microsoft Graph or Power Automate with appropriate permissions.</p>
 </section>
 <footer><span>Calinan National High School · Teachers Substitution Management</span><span>For authorized school use</span></footer>
