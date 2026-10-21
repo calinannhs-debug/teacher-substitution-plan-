@@ -36,3 +36,18 @@ Select the plan date, then click **Print plan**. In the print dialog, choose lan
 The Data Collection area provides an `.xlsx` template and accepts `.xlsx`, `.xls`, and `.csv` uploads. It imports the first worksheet; keep template headers unchanged. Imported assignments are stored in the current browser and can be printed/exported. Excel reading and template creation use the SheetJS CDN.
 
 A button opens the provided SharePoint folder. The static site cannot directly authenticate to or sync data into that protected folder. For live shared database syncing, configure Microsoft Graph or Power Automate with school administrator approval.
+
+
+## Save records to SharePoint (requires administrator setup)
+The site includes a **Save records to SharePoint** button. GitHub Pages cannot write to a protected SharePoint folder using only a sharing link. To activate saving:
+1. A Microsoft 365 administrator creates a Power Automate cloud flow with an HTTP request trigger and validates the incoming JSON.
+2. The flow writes each record into a SharePoint List (recommended) or uses an approved SharePoint/Excel connector.
+3. Configure access restrictions and authentication according to school policy; do not expose a privileged endpoint publicly.
+4. Paste the flow's HTTPS trigger URL into **Data Collection → Power Automate HTTP trigger URL**, then select **Save integration URL**.
+5. Upload/enter records and click **Save records to SharePoint**. Check the flow run history and SharePoint list to confirm.
+
+The website sends `{ source, sentAt, records }` as JSON using HTTP POST. The integration URL is stored in the current browser only. A successful HTTP response means the endpoint accepted the request; verify the flow's actions completed.
+
+
+## Teacher selection from uploaded / SharePoint data
+The **On-leave / absent teacher** dropdown is populated from teacher names found in uploaded substitution records (both absent and substitute teacher columns). For a live directory in SharePoint, configure a separate Power Automate HTTP GET endpoint and paste it in **Data Collection → Power Automate URL to GET teacher directory from SharePoint**. The endpoint should return JSON like `{"teachers":[{"name":"Teacher Name"}]}`. Configure access controls and CORS for the GitHub Pages origin. A SharePoint folder-sharing URL alone cannot be queried as a structured database by this static site.
