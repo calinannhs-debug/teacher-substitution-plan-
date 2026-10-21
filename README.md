@@ -51,3 +51,7 @@ The website sends `{ source, sentAt, records }` as JSON using HTTP POST. The int
 
 ## Teacher selection from uploaded / SharePoint data
 The **On-leave / absent teacher** dropdown is populated from teacher names found in uploaded substitution records (both absent and substitute teacher columns). For a live directory in SharePoint, configure a separate Power Automate HTTP GET endpoint and paste it in **Data Collection → Power Automate URL to GET teacher directory from SharePoint**. The endpoint should return JSON like `{"teachers":[{"name":"Teacher Name"}]}`. Configure access controls and CORS for the GitHub Pages origin. A SharePoint folder-sharing URL alone cannot be queried as a structured database by this static site.
+
+
+## Available substitute dropdown
+The substitute dropdown excludes the selected absent teacher and locally recorded assignments for the same date/period. To check all staff schedules in SharePoint, configure the directory Power Automate endpoint to return JSON such as `{"teachers":[{"name":"Teacher Name","busySlots":[{"date":"2026-10-21","period":"8:00–8:50 AM"}]}]}`. A `busySlots` entry means that teacher is unavailable for that date/period. The endpoint must be authorized/configured and return valid JSON; the SharePoint folder URL alone cannot provide schedule availability.

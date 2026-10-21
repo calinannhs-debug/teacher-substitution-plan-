@@ -4,10 +4,29 @@ let records=[];
 try{records=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){records=[]}
 const today=new Date(); const localDate=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
 $('planDate').value=localDate;$('filterDate').value=localDate;
-function save(){localStorage.setItem(KEY,JSON.stringify(records));render();populateTeacherChoices()}
+function save(){localStorage.setItem(KEY,JSON.stringify(records));['planDate','period','absentTeacher'].forEach(id=>$(id)?.addEventListener('change',refreshAvailableSubs));$('period')?.addEventListener('input',refreshAvailableSubs);render();populateTeacherChoices();refreshAvailableSubs();refreshAvailableSubs()}
 function teacherNames(){return [...new Set(records.flatMap(r=>[r.absent,r.sub]).map(n=>String(n||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))}
-function populateTeacherChoices(remoteNames=[]){const names=[...new Set([...teacherNames(),...remoteNames.map(x=>typeof x==='string'?x:(x.name||x.teacherName||x.title||'' )).map(x=>String(x||'').trim()).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));const select=$('absentTeacher');const current=select.value;select.innerHTML='<option value="">Select teacher from imported list</option>'+names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');if(names.includes(current))select.value=current;const dl=$('teacherNames');if(dl)dl.innerHTML=names.map(n=>`<option value="${escapeHtml(n)}"></option>`).join('')}
+function populateTeacherChoices(remoteNames=[]){const names=[...new Set([...teacherNames(),...remoteNames.map(x=>typeof x==='string'?x:(x.name||x.teacherName||x.title||'' )).map(x=>String(x||'').trim()).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));const select=$('absentTeacher');const current=select.value;select.innerHTML='<option value="">Select teacher from imported list</option>'+names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');if(names.includes(current))select.value=current;const dl=$('teacherNames');if(dl)dl.innerHTML=names.map(n=>`<option value="${escapeHtml(n)}"></option>`).join('');refreshAvailableSubs()}
 
+let remoteTeacherDirectory=[];
+function periodKey(v){return String(v||'').trim().toLowerCase().replace(/[–—]/g,'-').replace(/\s+/g,'')}
+function refreshAvailableSubs(){
+ const select=$('subTeacher');if(!select)return;
+ const date=$('planDate')?.value||'';const period=$('period')?.value||'';const absent=$('absentTeacher')?.value||'';const old=select.value;
+ const localNames=teacherNames();const directory=remoteTeacherDirectory.length?remoteTeacherDirectory:localNames.map(name=>({name}));
+ const options=directory.map(t=>typeof t==='string'?{name:t}:t).filter(t=>t.name||t.teacherName||t.title).map(t=>({...t,name:String(t.name||t.teacherName||t.title).trim()}));
+ const available=options.filter(t=>t.name!==absent).filter(t=>{
+  const busy=[...(t.busySlots||[]),...(t.assignments||[]),...(t.schedule||[]).filter(x=>x.status==='busy')];
+  const hasBusy=busy.some(b=>(!b.date||b.date===date)&&(!b.period||periodKey(b.period)===periodKey(period)));
+  const localBusy=records.some(r=>r.date===date&&periodKey(r.period)===periodKey(period)&&r.sub===t.name&&r.absent!==absent);
+  const availablePeriods=t.availablePeriods||t.freePeriods;
+  const explicitlyFree=Array.isArray(availablePeriods)&&date&&period?availablePeriods.some(x=>typeof x==='string'?periodKey(x)===periodKey(period):(x.date===date&&periodKey(x.period)===periodKey(period))):true;
+  return !hasBusy&&!localBusy&&explicitlyFree;
+ });
+ select.innerHTML='<option value="">'+(date&&period?'Select an available substitute':'Choose date and period first')+'</option>'+available.map(t=>`<option value="${escapeHtml(t.name)}">${escapeHtml(t.name)}</option>`).join('');
+ if(available.some(t=>t.name===old))select.value=old;
+ if(date&&period&&available.length===0)select.options[0].textContent='No available substitute found — check SharePoint schedule';
+}
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function filtered(){return records.filter(r=>r.date===$('filterDate').value).sort((a,b)=>a.period.localeCompare(b.period))}
 function render(){
@@ -35,4 +54,4 @@ if($('flowUrl')) $('flowUrl').value=savedFlowUrl;
 if($('saveFlowUrl')) $('saveFlowUrl').addEventListener('click',()=>{const url=$('flowUrl').value.trim();if(url&&!/^https:\/\//i.test(url)){alert('Enter the HTTPS URL supplied by your Power Automate flow.');return}localStorage.setItem('cnhsFlowUrl',url);alert(url?'Integration URL saved in this browser.':'Integration URL cleared.')});
 if($('saveSharePointBtn')) $('saveSharePointBtn').addEventListener('click',async()=>{const status=$('uploadStatus');const url=(localStorage.getItem('cnhsFlowUrl')||'').trim();if(!records.length){status.textContent='There are no records to save. Add an assignment or upload an Excel file first.';return}if(!url){status.textContent='SharePoint saving is not configured. Ask your Microsoft 365 administrator to set up a Power Automate flow, then paste its HTTPS trigger URL in Data Collection.';alert('Set up the Power Automate integration URL in Data Collection first. The SharePoint folder link alone cannot accept uploads.');return}if(!confirm(`Send ${records.length} substitution record(s) to the configured SharePoint flow?`))return;status.textContent='Sending records to the SharePoint flow…';try{const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'CNHS Teachers Substitution Management',sentAt:new Date().toISOString(),records})});if(!response.ok)throw new Error(`Flow returned HTTP ${response.status}. Check the flow and its permissions.`);status.textContent=`Successfully sent ${records.length} record(s) to the configured flow. Verify the items in SharePoint.`}catch(err){status.textContent='Could not confirm SharePoint save: '+err.message+' Check the flow URL, CORS settings, and run history.';alert('SharePoint save failed or could not be confirmed. Check the Power Automate flow run history.')}});
 
-render();populateTeacherChoices();
+['planDate','period','absentTeacher'].forEach(id=>$(id)?.addEventListener('change',refreshAvailableSubs));$('period')?.addEventListener('input',refreshAvailableSubs);render();populateTeacherChoices();refreshAvailableSubs();
