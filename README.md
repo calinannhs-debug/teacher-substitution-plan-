@@ -55,3 +55,7 @@ The **On-leave / absent teacher** dropdown is populated from teacher names found
 
 ## Available substitute dropdown
 The substitute dropdown excludes the selected absent teacher and locally recorded assignments for the same date/period. To check all staff schedules in SharePoint, configure the directory Power Automate endpoint to return JSON such as `{"teachers":[{"name":"Teacher Name","busySlots":[{"date":"2026-10-21","period":"8:00–8:50 AM"}]}]}`. A `busySlots` entry means that teacher is unavailable for that date/period. The endpoint must be authorized/configured and return valid JSON; the SharePoint folder URL alone cannot provide schedule availability.
+
+
+## Teaching Loads feature
+The website includes a Teaching Loads section where staff can add teacher, day, period, subject, grade/section, and room. Loads are stored in the current browser and can be sent to the configured Power Automate endpoint with `type: "teachingLoads"`. Update the flow to branch on this type and write each load into a SharePoint List (recommended) or an approved Excel table. To identify vacant teachers across staff, the teacher-directory/availability endpoint should return these loads and any exceptions/leave records; the browser cannot directly read the SharePoint folder.

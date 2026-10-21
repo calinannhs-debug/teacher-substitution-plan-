@@ -13,7 +13,7 @@
   </div>
   <div class="header-tag">SCHOOL OPERATIONS</div>
 </header>
-<nav class="nav"><a href="#dashboard">Dashboard</a><a href="#new-plan">Create Plan</a><a href="#plans">Substitution Records</a><a href="#collection">Data Collection</a></nav>
+<nav class="nav"><a href="#dashboard">Dashboard</a><a href="#new-plan">Create Plan</a><a href="#teaching-loads">Teaching Loads</a><a href="#plans">Substitution Records</a><a href="#collection">Data Collection</a></nav>
 <main>
 <section class="hero">
  <div><p class="eyebrow light">DAILY STAFFING WORKFLOW</p><h2>Teacher Substitution Plan</h2><p>Record teacher absences, assign substitute teachers, and prepare a clean, print-ready daily plan.</p></div>
@@ -41,6 +41,20 @@
   <div class="form-actions"><button id="saveSharePointBtn" class="btn" type="button">Save records to SharePoint</button></div><p id="uploadStatus" class="note" aria-live="polite">Upload a completed template, then save the imported records to SharePoint.</p>
  </form>
  <p class="note">Tip: add one row for each class or period that needs coverage. The plan below groups records by date.</p>
+</section>
+<section id="teaching-loads" class="panel">
+ <div class="section-heading"><div><p class="eyebrow">TEACHER SCHEDULES</p><h2>Teaching Loads</h2></div><span class="pill">Used to identify vacant teachers</span></div>
+ <p class="note">Teachers or authorized staff can add each scheduled class period. Save loads to the configured SharePoint flow so availability can be checked against the timetable.</p>
+ <form id="loadForm"><div class="form-grid">
+  <label>Teacher name <input id="loadTeacher" required placeholder="Full name"></label>
+  <label>Day of week <select id="loadDay" required><option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option><option value="Friday">Friday</option><option value="Saturday">Saturday</option></select></label>
+  <label>Period / time <input id="loadPeriod" required placeholder="e.g., 8:00–8:50 AM"></label>
+  <label>Subject <input id="loadSubject" required placeholder="e.g., Mathematics"></label>
+  <label>Grade / section <input id="loadGrade" required placeholder="e.g., Grade 7 - Mabini"></label>
+  <label>Room <input id="loadRoom" placeholder="Room / location"></label>
+ </div><div class="form-actions"><button class="btn" type="submit">＋ Add Teaching Load</button><button class="btn btn-outline" id="saveLoadsBtn" type="button">Save Teaching Loads to SharePoint</button><button class="btn btn-outline" id="exportLoadsBtn" type="button">Export Loads CSV</button></div></form>
+ <p id="loadsStatus" class="note" aria-live="polite">Teaching loads are stored in this browser until saved through a configured Power Automate flow.</p>
+ <div class="table-wrap"><table><thead><tr><th>#</th><th>Teacher</th><th>Day</th><th>Period</th><th>Subject</th><th>Grade / Section</th><th>Room</th><th class="no-print">Action</th></tr></thead><tbody id="loadsBody"><tr><td colspan="8" class="empty">No teaching loads added yet.</td></tr></tbody></table></div>
 </section>
 <section id="plans" class="panel">
  <div class="section-heading"><div><p class="eyebrow">REVIEW & PRINT</p><h2>Substitution records</h2></div>
