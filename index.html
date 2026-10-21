@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNHS | Teachers Substitution Plan</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="brand">
+    <div class="logo-wrap"><img src="assets/school-logo.svg" alt="Calinan National High School logo" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span class="logo-fallback">CNHS</span></div>
+    <div><p class="eyebrow">Republic of the Philippines · Department of Education</p><h1>Calinan National High School</h1><p class="subtitle">Teachers Substitution Management</p></div>
+  </div>
+  <div class="header-tag">SCHOOL OPERATIONS</div>
+</header>
+<nav class="nav"><a href="#dashboard">Dashboard</a><a href="#new-plan">Create Plan</a><a href="#plans">Substitution Records</a><a href="#collection">Data Collection</a></nav>
+<main>
+<section class="hero">
+ <div><p class="eyebrow light">DAILY STAFFING WORKFLOW</p><h2>Teacher Substitution Plan</h2><p>Record teacher absences, assign substitute teachers, and prepare a clean, print-ready daily plan.</p></div>
+ <button class="btn btn-light" id="printTop">Print Current Plan</button>
+</section>
+<section id="dashboard" class="stats">
+ <article class="stat"><span>Total records</span><strong id="totalCount">0</strong></article>
+ <article class="stat"><span>Plans for selected date</span><strong id="todayCount">0</strong></article>
+ <article class="stat"><span>Substitution assignments</span><strong id="assignmentCount">0</strong></article>
+</section>
+<section id="new-plan" class="panel">
+ <div class="section-heading"><div><p class="eyebrow">ENTRY FORM</p><h2>Create substitution assignment</h2></div><span class="pill">Save locally · Export to Excel</span></div>
+ <form id="entryForm">
+  <div class="form-grid">
+   <label>Plan date <input id="planDate" type="date" required></label>
+   <label>Absent teacher <input id="absentTeacher" placeholder="Full name" required></label>
+   <label>Substitute teacher <input id="subTeacher" placeholder="Full name" required></label>
+   <label>Grade / section <input id="gradeSection" placeholder="e.g., Grade 8 - Mabini" required></label>
+   <label>Subject <input id="subject" placeholder="e.g., English" required></label>
+   <label>Time / period <input id="period" placeholder="e.g., 8:00–8:50 AM" required></label>
+   <label>Room <input id="room" placeholder="Room number / location"></label>
+   <label>Reason / remarks <input id="remarks" placeholder="Optional notes"></label>
+  </div>
+  <div class="form-actions"><button class="btn" type="submit">＋ Add assignment</button><button class="btn btn-outline" type="reset">Clear form</button></div>
+ </form>
+ <p class="note">Tip: add one row for each class or period that needs coverage. The plan below groups records by date.</p>
+</section>
+<section id="plans" class="panel">
+ <div class="section-heading"><div><p class="eyebrow">REVIEW & PRINT</p><h2>Substitution records</h2></div>
+ <div class="toolbar"><label class="date-filter">Plan date <input type="date" id="filterDate"></label><button class="btn btn-outline" id="exportBtn">Export CSV for Excel</button><button class="btn" id="printBtn">Print plan</button></div></div>
+ <div id="printHeader" class="print-only"><h2>CALINAN NATIONAL HIGH SCHOOL</h2><h3>TEACHERS SUBSTITUTION PLAN</h3><p id="printDate"></p></div>
+ <div class="table-wrap"><table><thead><tr><th>#</th><th>Absent teacher</th><th>Substitute teacher</th><th>Grade / Section</th><th>Subject</th><th>Time / Period</th><th>Room</th><th>Remarks</th><th class="no-print">Action</th></tr></thead><tbody id="recordsBody"><tr><td colspan="9" class="empty">No records yet. Create an assignment above.</td></tr></tbody></table></div>
+ <div class="approval"><div>Prepared by: __________________________</div><div>Checked by: __________________________</div><div>Approved by: __________________________</div></div>
+</section>
+<section id="collection" class="panel collection">
+ <div><p class="eyebrow">DATA COLLECTION</p><h2>Connect Microsoft Forms + Excel</h2><p>For shared collection across staff, create a Microsoft Form for substitution requests and set its responses to open in Excel. Paste the form's response link below to add it to this website.</p></div>
+ <div class="form-link-row"><input id="formUrl" type="url" placeholder="Paste Microsoft Forms link (https://forms.office.com/...)"><button class="btn" id="saveFormUrl">Save form link</button></div>
+ <div class="form-actions"><a id="openForm" class="btn btn-outline" href="#" target="_blank" rel="noopener">Open Microsoft Form</a><button id="downloadTemplate" class="btn btn-outline">Download Excel CSV template</button></div>
+ <p class="note">This GitHub Pages site does not automatically read or write your private Excel workbook. Use Microsoft Forms to collect submissions; its linked Excel workbook is the shared source of truth. Export this page's local records as CSV when needed.</p>
+</section>
+<footer><span>Calinan National High School · Teachers Substitution Management</span><span>For authorized school use</span></footer>
+</main>
+<script src="app.js"></script>
+</body></html>
