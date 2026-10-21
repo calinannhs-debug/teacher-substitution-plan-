@@ -16,7 +16,7 @@ A GitHub Pages-ready static website to record teacher substitution assignments, 
 5. Open the Pages URL shown by GitHub.
 
 ## Add the school logo
-Replace `assets/school-logo.png` with the official Calinan National High School logo. Keep the exact filename, or update the image path in `index.html`.
+The official Calinan National High School logo provided by the user is included as `assets/school-logo.png` and displayed in the header.
 
 ## Collect data through Microsoft Forms + Excel
 1. In Microsoft Forms, create a form named **CNHS Teacher Substitution Request**.
@@ -30,3 +30,9 @@ The table in the website stores entries in the current browser's local storage. 
 
 ## Print
 Select the plan date, then click **Print plan**. In the print dialog, choose landscape orientation if needed.
+
+
+## Excel upload and SharePoint link
+The Data Collection area provides an `.xlsx` template and accepts `.xlsx`, `.xls`, and `.csv` uploads. It imports the first worksheet; keep template headers unchanged. Imported assignments are stored in the current browser and can be printed/exported. Excel reading and template creation use the SheetJS CDN.
+
+A button opens the provided SharePoint folder. The static site cannot directly authenticate to or sync data into that protected folder. For live shared database syncing, configure Microsoft Graph or Power Automate with school administrator approval.

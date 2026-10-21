@@ -8,7 +8,7 @@
 <body>
 <header class="site-header">
   <div class="brand">
-    <div class="logo-wrap"><img src="assets/school-logo.svg" alt="Calinan National High School logo" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span class="logo-fallback">CNHS</span></div>
+    <div class="logo-wrap"><img src="assets/school-logo.png" alt="Calinan National High School logo" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span class="logo-fallback">CNHS</span></div>
     <div><p class="eyebrow">Republic of the Philippines · Department of Education</p><h1>Calinan National High School</h1><p class="subtitle">Teachers Substitution Management</p></div>
   </div>
   <div class="header-tag">SCHOOL OPERATIONS</div>
@@ -51,10 +51,12 @@
 <section id="collection" class="panel collection">
  <div><p class="eyebrow">DATA COLLECTION</p><h2>Connect Microsoft Forms + Excel</h2><p>For shared collection across staff, create a Microsoft Form for substitution requests and set its responses to open in Excel. Paste the form's response link below to add it to this website.</p></div>
  <div class="form-link-row"><input id="formUrl" type="url" placeholder="Paste Microsoft Forms link (https://forms.office.com/...)"><button class="btn" id="saveFormUrl">Save form link</button></div>
- <div class="form-actions"><a id="openForm" class="btn btn-outline" href="#" target="_blank" rel="noopener">Open Microsoft Form</a><button id="downloadTemplate" class="btn btn-outline">Download Excel CSV template</button></div>
- <p class="note">This GitHub Pages site does not automatically read or write your private Excel workbook. Use Microsoft Forms to collect submissions; its linked Excel workbook is the shared source of truth. Export this page's local records as CSV when needed.</p>
+ <div class="form-actions"><a id="openForm" class="btn btn-outline" href="#" target="_blank" rel="noopener">Open Microsoft Form</a><a class="btn btn-outline" href="https://r11deped-my.sharepoint.com/:f:/g/personal/304354_r11_deped_gov_ph/IgCXS7fvXKMmRoqpwx4xHP2DAYsS5hLPniPfk6zXk8MgXD0?e=47hPed" target="_blank" rel="noopener">Open SharePoint Database</a><button id="downloadTemplate" class="btn btn-outline">Download Excel Template (.xlsx)</button></div>
+ <div class="upload-box"><div><h3>Upload teachers' Excel file</h3><p class="note">Choose an .xlsx, .xls, or .csv file using the template columns. Imported rows are added to this browser's records.</p></div><label class="btn" for="excelUpload">Choose Excel file</label><input id="excelUpload" type="file" accept=".xlsx,.xls,.csv" hidden><span id="uploadStatus" class="upload-status" aria-live="polite">No file selected</span></div>
+ <p class="note">The SharePoint link opens the school's shared folder. This static GitHub Pages website cannot directly read or write that protected SharePoint folder or automatically sync uploads to it. For live shared database syncing, an administrator must configure Microsoft Graph or Power Automate with appropriate permissions.</p>
 </section>
 <footer><span>Calinan National High School · Teachers Substitution Management</span><span>For authorized school use</span></footer>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="app.js"></script>
 </body></html>
