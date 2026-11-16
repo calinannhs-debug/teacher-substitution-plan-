@@ -1,61 +1,81 @@
-# Calinan National High School — Teachers Substitution Management
+# Calinan National High School — Teacher Substitution Plan
 
-A GitHub Pages-ready static website to record teacher substitution assignments, filter by date, print a substitution plan, and export records as a CSV file that opens in Microsoft Excel.
+A responsive school substitution schedule with a Google Sheets backend. The school seal is included in the header.
 
-## Files
-- `index.html` — website layout
-- `styles.css` — responsive styling and print layout
-- `app.js` — records, date filtering, CSV export, Microsoft Forms link
-- `assets/school-logo.png` — replace with the official school logo
+## Features
+- Add and manage the teacher directory
+- Let teachers encode weekly teaching loads by day, period, subject, class/section and room
+- Find vacant teachers for a selected date and period; teachers with a recorded class in that slot are excluded
+- Filter substitute choices to teachers marked vacant for the selected assignment slot
+- Record absent teacher, substitute, date, class/section, subject, period, room, status and notes
+- Search and filter the substitution schedule
+- Daily summary counts and print-friendly schedule
+- Google Sheets storage through Google Apps Script
+- Demo mode works locally in the browser before the Sheet is connected
 
-## Publish on GitHub Pages
-1. Create a GitHub repository, for example `cnhs-teacher-substitution`.
-2. Upload all files and the `assets` folder to the repository root.
-3. Open **Settings → Pages**.
-4. Under Build and deployment, choose **Deploy from a branch**, select `main` and `/ (root)`, then save.
-5. Open the Pages URL shown by GitHub.
+## Repository files
+- `index.html` — application page
+- `styles.css` — responsive school-themed layout
+- `app.js` — frontend logic
+- `config.js` — Apps Script deployment URL
+- `Code.gs` — Google Apps Script backend
+- `assets/cnhs-logo.png` — uploaded school logo
 
-## Add the school logo
-The official Calinan National High School logo provided by the user is included as `assets/school-logo.png` and displayed in the header.
+## 1. Set up the Google Sheet
+1. Create a new Google Spreadsheet named **CNHS Teacher Substitution Plan**.
+2. Open **Extensions → Apps Script**.
+3. Copy all code from `Code.gs` in this repository into the Apps Script editor.
+4. Save, select `setupSheet` in the function list, and click **Run**. Approve the requested spreadsheet permissions.
+5. The script creates three tabs: `Teachers`, `Substitutions`, and `TeachingSchedule`, with headers.
 
-## Collect data through Microsoft Forms + Excel
-1. In Microsoft Forms, create a form named **CNHS Teacher Substitution Request**.
-2. Suggested fields: Plan date, absent teacher, substitute teacher (if known), grade/section, subject, time/period, room, reason/remarks.
-3. Use **Open in Excel** / the Forms Responses workbook option to manage submitted entries in Excel.
-4. Copy the responder link and paste it into the website's **Connect Microsoft Forms + Excel** area.
-5. For a public or staff-shared workflow, use the Microsoft Forms response workbook as the shared master record. This static website does not connect directly to a private Excel workbook or automatically sync Forms responses into its table.
+If you create a standalone Apps Script project instead of opening it from the Sheet, paste the spreadsheet ID into `SHEET_ID` at the top of `Code.gs`.
 
-## Important data note
-The table in the website stores entries in the current browser's local storage. It is suitable for a prototype or a single workstation, not shared multi-user storage. Export records using **Export CSV for Excel**. For a shared production workflow, use Microsoft Forms + its linked Excel workbook as the authoritative collection source, or add a secure backend/Power Automate integration.
+## 2. Deploy the backend
+1. In Apps Script, choose **Deploy → New deployment**.
+2. Select **Web app**.
+3. Set **Execute as** to **Me**.
+4. Set access according to your school's data privacy and account policy. For a school-only deployment, use the narrowest access option available to your organization. Avoid public access if the app will contain staff-sensitive information.
+5. Deploy, authorize if prompted, and copy the Web App URL ending in `/exec`.
 
-## Print
-Select the plan date, then click **Print plan**. In the print dialog, choose landscape orientation if needed.
+**Important:** After updating the backend, run `setupSheet()` once to ensure the `TeachingSchedule` tab exists, then deploy a **new version** of the Web App and update `config.js` if the deployment URL changes. The deployed web app runs with the deployer's spreadsheet permissions. Keep the spreadsheet private and distribute the web app only to authorized school personnel. Review access with your school administrator before using real staff records.
 
+## 3. Connect the GitHub Pages frontend
+1. Open `config.js`.
+2. Set `SCRIPT_URL` to the deployed `/exec` URL, for example:
 
-## Excel upload and SharePoint link
-The Data Collection area provides an `.xlsx` template and accepts `.xlsx`, `.xls`, and `.csv` uploads. It imports the first worksheet; keep template headers unchanged. Imported assignments are stored in the current browser and can be printed/exported. Excel reading and template creation use the SheetJS CDN.
+   ```js
+   window.CNHS_CONFIG = {
+     SCRIPT_URL: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"
+   };
+   ```
+3. Commit and push the repository to GitHub.
+4. In the repository, open **Settings → Pages**.
+5. Choose **Deploy from a branch**, select `main` and `/ (root)`, then save.
+6. Open the published Pages URL.
 
-A button opens the provided SharePoint folder. The static site cannot directly authenticate to or sync data into that protected folder. For live shared database syncing, configure Microsoft Graph or Power Automate with school administrator approval.
+The frontend uses JSONP for read requests and a cross-origin no-cors POST for write requests. After each write it reloads the records from the Sheet. Test the deployed setup with sample records before official use. If your Google Workspace policy blocks cross-origin access, host the frontend through Apps Script HTML Service or use an approved authenticated integration.
 
+## 4. Local preview
+Open `index.html` in a browser. With `SCRIPT_URL` blank, the app runs in **Demo mode** and stores sample entries in that browser's local storage only. Demo records are not sent to Google Sheets.
 
-## Save records to SharePoint (requires administrator setup)
-The site includes a **Save records to SharePoint** button. GitHub Pages cannot write to a protected SharePoint folder using only a sharing link. To activate saving:
-1. A Microsoft 365 administrator creates a Power Automate cloud flow with an HTTP request trigger and validates the incoming JSON.
-2. The flow writes each record into a SharePoint List (recommended) or uses an approved SharePoint/Excel connector.
-3. Configure access restrictions and authentication according to school policy; do not expose a privileged endpoint publicly.
-4. Paste the flow's HTTPS trigger URL into **Data Collection → Power Automate HTTP trigger URL**, then select **Save integration URL**.
-5. Upload/enter records and click **Save records to SharePoint**. Check the flow run history and SharePoint list to confirm.
+## Suggested operating procedure
+- Assign one authorized coordinator to maintain the substitution plan.
+- Confirm the substitute's availability and teaching load before saving an assignment.
+- Use the Notes field for lesson instructions and handover reminders.
+- Review pending assignments before printing or circulating the daily plan.
+- Do not enter student personal or sensitive information in Notes.
 
-The website sends `{ source, sentAt, records }` as JSON using HTTP POST. The integration URL is stored in the current browser only. A successful HTTP response means the endpoint accepted the request; verify the flow's actions completed.
+## Data structure
+**Teachers:** `id`, `name`, `department`, `createdAt`
 
+**Substitutions:** `id`, `date`, `absentTeacher`, `substituteTeacher`, `section`, `subject`, `period`, `room`, `status`, `notes`, `createdAt`
 
-## Teacher selection from uploaded / SharePoint data
-The **On-leave / absent teacher** dropdown is populated from teacher names found in uploaded substitution records (both absent and substitute teacher columns). For a live directory in SharePoint, configure a separate Power Automate HTTP GET endpoint and paste it in **Data Collection → Power Automate URL to GET teacher directory from SharePoint**. The endpoint should return JSON like `{"teachers":[{"name":"Teacher Name"}]}`. Configure access controls and CORS for the GitHub Pages origin. A SharePoint folder-sharing URL alone cannot be queried as a structured database by this static site.
+**TeachingSchedule:** `id`, `teacherId`, `teacher`, `day`, `period`, `subject`, `section`, `room`, `createdAt`
 
+For accurate vacancy checking, enter one timetable row for each teacher, day and class period. Use consistent period labels (for example, `7:30–8:30 AM`) in the timetable and substitution form. If a teacher has no saved class entry for that day and period, the system treats them as vacant. This is a timetable-based check; update the schedule for meetings, duties, leave, or other commitments not represented as classes.
 
-## Available substitute dropdown
-The substitute dropdown excludes the selected absent teacher and locally recorded assignments for the same date/period. To check all staff schedules in SharePoint, configure the directory Power Automate endpoint to return JSON such as `{"teachers":[{"name":"Teacher Name","busySlots":[{"date":"2026-10-21","period":"8:00–8:50 AM"}]}]}`. A `busySlots` entry means that teacher is unavailable for that date/period. The endpoint must be authorized/configured and return valid JSON; the SharePoint folder URL alone cannot provide schedule availability.
+## Privacy and security
+This starter project is intended for controlled school use. GitHub Pages is public by default, so do not commit private teacher information, spreadsheet credentials, or student data. The Apps Script URL is a capability endpoint: protect its distribution and deploy it with the narrowest access policy your school supports. For stronger authentication, use an organization-approved sign-in and backend architecture before production rollout.
 
-
-## Teaching Loads feature
-The website includes a Teaching Loads section where staff can add teacher, day, period, subject, grade/section, and room. Loads are stored in the current browser and can be sent to the configured Power Automate endpoint with `type: "teachingLoads"`. Update the flow to branch on this type and write each load into a SharePoint List (recommended) or an approved Excel table. To identify vacant teachers across staff, the teacher-directory/availability endpoint should return these loads and any exceptions/leave records; the browser cannot directly read the SharePoint folder.
+## License
+Add the license approved by Calinan National High School before redistributing.

@@ -1,77 +1,151 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CNHS | Teachers Substitution Plan</title>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#075b2b">
+  <title>CNHS | Teacher Substitution Plan</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="site-header">
-  <div class="brand">
-    <div class="logo-wrap"><img src="assets/school-logo.png" alt="Calinan National High School logo" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span class="logo-fallback">CNHS</span></div>
-    <div><p class="eyebrow">Republic of the Philippines · Department of Education</p><h1>Calinan National High School</h1><p class="subtitle">Teachers Substitution Management</p></div>
-  </div>
-  <div class="header-tag">SCHOOL OPERATIONS</div>
-</header>
-<nav class="nav"><a href="#dashboard">Dashboard</a><a href="#new-plan">Create Plan</a><a href="#teaching-loads">Teaching Loads</a><a href="#plans">Substitution Records</a><a href="#collection">Data Collection</a></nav>
-<main>
-<section class="hero">
- <div><p class="eyebrow light">DAILY STAFFING WORKFLOW</p><h2>Teacher Substitution Plan</h2><p>Record teacher absences, assign substitute teachers, and prepare a clean, print-ready daily plan.</p></div>
- <button class="btn btn-light" id="printTop">Print Current Plan</button>
-</section>
-<section id="dashboard" class="stats">
- <article class="stat"><span>Total records</span><strong id="totalCount">0</strong></article>
- <article class="stat"><span>Plans for selected date</span><strong id="todayCount">0</strong></article>
- <article class="stat"><span>Substitution assignments</span><strong id="assignmentCount">0</strong></article>
-</section>
-<section id="new-plan" class="panel">
- <div class="section-heading"><div><p class="eyebrow">ENTRY FORM</p><h2>Create substitution assignment</h2></div><span class="pill">Save locally · Export to Excel</span></div>
- <form id="entryForm">
-  <div class="form-grid">
-   <label>Plan date <input id="planDate" type="date" required></label>
-   <label>On-leave / absent teacher <select id="absentTeacher" required><option value="">Select teacher from imported list</option></select><span class="field-hint">List is populated from uploaded records and, when configured, the SharePoint teacher directory.</span></label>
-   <label>Available substitute teacher <select id="subTeacher" required><option value="">Choose date and period first</option></select><span class="field-hint">Only teachers marked available for the selected date/period should appear when SharePoint availability is configured.</span></label>
-   <label>Grade / section <input id="gradeSection" placeholder="e.g., Grade 8 - Mabini" required></label>
-   <label>Subject <input id="subject" placeholder="e.g., English" required></label>
-   <label>Time / period <input id="period" placeholder="e.g., 8:00–8:50 AM" required></label>
-   <label>Room <input id="room" placeholder="Room number / location"></label>
-   <label>Reason / remarks <input id="remarks" placeholder="Optional notes"></label>
-  </div>
-  <div class="form-actions"><button class="btn" type="submit">＋ Add assignment</button><button class="btn btn-outline" type="reset">Clear form</button><button id="downloadTemplate" class="btn btn-outline" type="button">Download Excel Template (.xlsx)</button><label class="btn btn-outline" for="excelUpload">Upload Excel Data</label><input id="excelUpload" type="file" accept=".xlsx,.xls,.csv" hidden></div>
-  <div class="form-actions"><button id="saveSharePointBtn" class="btn" type="button">Save records to SharePoint</button></div><p id="uploadStatus" class="note" aria-live="polite">Upload a completed template, then save the imported records to SharePoint.</p>
- </form>
- <p class="note">Tip: add one row for each class or period that needs coverage. The plan below groups records by date.</p>
-</section>
-<section id="teaching-loads" class="panel">
- <div class="section-heading"><div><p class="eyebrow">TEACHER SCHEDULES</p><h2>Teaching Loads</h2></div><span class="pill">Used to identify vacant teachers</span></div>
- <p class="note">Teachers or authorized staff can add each scheduled class period. Save loads to the configured SharePoint flow so availability can be checked against the timetable.</p>
- <form id="loadForm"><div class="form-grid">
-  <label>Teacher name <input id="loadTeacher" required placeholder="Full name"></label>
-  <label>Day of week <select id="loadDay" required><option value="Monday">Monday</option><option value="Tuesday">Tuesday</option><option value="Wednesday">Wednesday</option><option value="Thursday">Thursday</option><option value="Friday">Friday</option><option value="Saturday">Saturday</option></select></label>
-  <label>Period / time <input id="loadPeriod" required placeholder="e.g., 8:00–8:50 AM"></label>
-  <label>Subject <input id="loadSubject" required placeholder="e.g., Mathematics"></label>
-  <label>Grade / section <input id="loadGrade" required placeholder="e.g., Grade 7 - Mabini"></label>
-  <label>Room <input id="loadRoom" placeholder="Room / location"></label>
- </div><div class="form-actions"><button class="btn" type="submit">＋ Add Teaching Load</button><button class="btn btn-outline" id="saveLoadsBtn" type="button">Save Teaching Loads to SharePoint</button><button class="btn btn-outline" id="exportLoadsBtn" type="button">Export Loads CSV</button></div></form>
- <p id="loadsStatus" class="note" aria-live="polite">Teaching loads are stored in this browser until saved through a configured Power Automate flow.</p>
- <div class="table-wrap"><table><thead><tr><th>#</th><th>Teacher</th><th>Day</th><th>Period</th><th>Subject</th><th>Grade / Section</th><th>Room</th><th class="no-print">Action</th></tr></thead><tbody id="loadsBody"><tr><td colspan="8" class="empty">No teaching loads added yet.</td></tr></tbody></table></div>
-</section>
-<section id="plans" class="panel">
- <div class="section-heading"><div><p class="eyebrow">REVIEW & PRINT</p><h2>Substitution records</h2></div>
- <div class="toolbar"><label class="date-filter">Plan date <input type="date" id="filterDate"></label><button class="btn btn-outline" id="exportBtn">Export CSV for Excel</button><button class="btn" id="printBtn">Print plan</button></div></div>
- <div id="printHeader" class="print-only"><h2>CALINAN NATIONAL HIGH SCHOOL</h2><h3>TEACHERS SUBSTITUTION PLAN</h3><p id="printDate"></p></div>
- <div class="table-wrap"><table><thead><tr><th>#</th><th>Absent teacher</th><th>Substitute teacher</th><th>Grade / Section</th><th>Subject</th><th>Time / Period</th><th>Room</th><th>Remarks</th><th class="no-print">Action</th></tr></thead><tbody id="recordsBody"><tr><td colspan="9" class="empty">No records yet. Create an assignment above.</td></tr></tbody></table></div>
- <div class="approval"><div>Prepared by: __________________________</div><div>Checked by: __________________________</div><div>Approved by: __________________________</div></div>
-</section>
-<section id="collection" class="panel collection">
- <div><p class="eyebrow">DATA COLLECTION</p><h2>Connect Microsoft Forms + Excel</h2><p>For shared collection across staff, create a Microsoft Form for substitution requests and set its responses to open in Excel. Paste the form's response link below to add it to this website.</p></div>
- <div class="form-link-row"><input id="formUrl" type="url" placeholder="Paste Microsoft Forms link (https://forms.office.com/...)"><button class="btn" id="saveFormUrl">Save form link</button></div><div class="form-link-row"><input id="flowUrl" type="url" placeholder="Power Automate HTTP trigger URL (save records)"><button class="btn btn-outline" id="saveFlowUrl">Save integration URL</button></div><div class="form-link-row"><input id="teacherDirectoryUrl" type="url" placeholder="Power Automate URL to GET SharePoint teachers and availability (optional)"><button class="btn btn-outline" id="loadTeachersBtn" type="button">Load SharePoint teachers</button></div>
- <div class="form-actions"><a id="openForm" class="btn btn-outline" href="#" target="_blank" rel="noopener">Open Microsoft Form</a><a class="btn btn-outline" href="https://r11deped-my.sharepoint.com/:f:/g/personal/304354_r11_deped_gov_ph/IgCXS7fvXKMmRoqpwx4xHP2DAYsS5hLPniPfk6zXk8MgXD0?e=47hPed" target="_blank" rel="noopener">Open SharePoint Database</a></div>
- 
- <p class="note">The absent-teacher dropdown is populated from teacher names in imported records. The substitute-teacher dropdown filters out the absent teacher and teachers already assigned during the same date and period. For live SharePoint availability, configure the directory endpoint to return JSON such as {"teachers":[{"name":"Teacher Name","busySlots":[{"date":"2026-10-21","period":"8:00–8:50 AM"}]}]}. The SharePoint folder link alone does not grant website read/write access. To enable Save records to SharePoint, an administrator must create a Power Automate flow with an HTTP request trigger and SharePoint Create item actions, then paste the flow URL above. Keep that URL private because it may act as a credential. The button sends the current browser records as JSON to the configured flow; saving is not active until the flow is configured.</p>
-</section>
-<footer><span>Calinan National High School · Teachers Substitution Management</span><span>For authorized school use</span></footer>
-</main>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="app.js"></script>
-</body></html>
+  <header class="school-header">
+    <div class="header-inner">
+      <img src="assets/cnhs-logo.png" alt="Calinan National High School seal" class="school-logo">
+      <div class="school-heading">
+        <p class="eyebrow">Republic of the Philippines · Department of Education</p>
+        <h1>CALINAN NATIONAL HIGH SCHOOL</h1>
+        <p>Calinan, Davao City</p>
+        <h2>TEACHER SUBSTITUTION PLAN</h2>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="toolbar panel">
+      <div>
+        <h2>Daily Coverage Dashboard</h2>
+        <p class="muted">Record teacher absences and assign class coverage.</p>
+      </div>
+      <div class="toolbar-actions">
+        <span id="connectionStatus" class="status-pill offline">Not connected</span>
+        <button id="refreshBtn" class="button button-light" type="button">Refresh</button>
+        <button id="printBtn" class="button button-primary" type="button">Print plan</button>
+      </div>
+    </section>
+
+    <section class="stats-grid" aria-label="Plan summary">
+      <article class="stat-card"><span>Teachers</span><strong id="teacherCount">0</strong></article>
+      <article class="stat-card"><span>Assignments today</span><strong id="todayCount">0</strong></article>
+      <article class="stat-card"><span>Needs attention</span><strong id="attentionCount">0</strong></article>
+    </section>
+
+    <section class="panel form-panel">
+      <div class="section-heading">
+        <div><h2>New substitution assignment</h2><p class="muted">Complete the details, then save to the connected Google Sheet.</p></div>
+      </div>
+      <form id="assignmentForm" class="form-grid">
+        <label> Date
+          <input id="assignmentDate" name="date" type="date" required>
+        </label>
+        <label> Absent teacher
+          <select id="absentTeacher" name="absentTeacher" required><option value="">Select teacher</option></select>
+        </label>
+        <label> Substitute teacher
+          <select id="substituteTeacher" name="substituteTeacher" required><option value="">Select substitute</option></select>
+        </label>
+        <label> Grade & section
+          <input name="section" placeholder="e.g. Grade 8 - Rizal" required maxlength="80">
+        </label>
+        <label> Subject
+          <input name="subject" placeholder="e.g. English" required maxlength="80">
+        </label>
+        <label> Time / period
+          <input id="assignmentPeriod" name="period" list="periodOptions" placeholder="e.g. 7:30–8:30 AM" required maxlength="60">
+          <datalist id="periodOptions"></datalist>
+        </label>
+        <label> Room
+          <input name="room" placeholder="e.g. Room 12" maxlength="40">
+        </label>
+        <label> Status
+          <select name="status"><option>Assigned</option><option>Pending</option><option>Completed</option><option>Cancelled</option></select>
+        </label>
+        <label class="full-width">Notes
+          <textarea name="notes" rows="2" placeholder="Lesson instructions, activity, or other reminders"></textarea>
+        </label>
+        <div class="form-footer full-width">
+          <p id="formMessage" class="form-message" role="status"></p>
+          <button class="button button-primary" type="submit">Save assignment</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel availability-panel">
+      <div class="section-heading">
+        <div><h2>Find vacant teachers</h2><p class="muted">Choose a date and period to see teachers who have no scheduled class.</p></div>
+      </div>
+      <div class="availability-controls">
+        <label> Date <input id="availabilityDate" type="date"></label>
+        <label> Time / period <input id="availabilityPeriod" list="periodOptions" placeholder="Choose or type a period"></label>
+      </div>
+      <div id="availabilityResults" class="availability-results"><p class="empty-state">Enter a date and period to check teacher availability.</p></div>
+    </section>
+
+    <section class="panel schedule-panel">
+      <div class="section-heading">
+        <div><h2>Teacher class schedules</h2><p class="muted">Teachers can add their weekly teaching loads. Use the same period label when checking availability.</p></div>
+      </div>
+      <form id="scheduleForm" class="form-grid schedule-form">
+        <label> Teacher <select id="scheduleTeacher" name="teacher" required><option value="">Select teacher</option></select></label>
+        <label> Day <select name="day" required><option value="">Select day</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option></select></label>
+        <label> Time / period <input name="period" list="periodOptions" placeholder="e.g. 7:30–8:30 AM" required maxlength="60"></label>
+        <label> Subject <input name="subject" placeholder="e.g. Mathematics" required maxlength="80"></label>
+        <label> Grade & section <input name="section" placeholder="e.g. Grade 7 - Mabini" maxlength="80"></label>
+        <label> Room <input name="room" placeholder="e.g. Room 5" maxlength="40"></label>
+        <div class="form-footer full-width"><p id="scheduleMessage" class="form-message" role="status"></p><button class="button button-primary" type="submit">Save class schedule</button></div>
+      </form>
+      <div class="table-wrap schedule-table-wrap">
+        <table><thead><tr><th>Teacher</th><th>Day</th><th>Time / period</th><th>Subject</th><th>Class / section</th><th>Room</th><th class="no-print">Action</th></tr></thead><tbody id="scheduleRows"><tr><td colspan="7" class="empty-state">No teacher schedules added yet.</td></tr></tbody></table>
+      </div>
+    </section>
+
+    <section class="panel substitution-panel" id="substitutionPlan">
+      <div class="section-heading table-heading">
+        <div><h2>Scheduled Substitution Plan</h2><p class="muted">Filter by date, teacher, or status.</p></div>
+        <button id="printSubstitutionBtn" class="button button-primary no-print" type="button">Print scheduled substitution plan</button>
+        <div class="filters">
+          <input id="filterDate" type="date" aria-label="Filter by date">
+          <input id="filterText" type="search" placeholder="Search teacher, class, subject…" aria-label="Search assignments">
+          <select id="filterStatus" aria-label="Filter by status"><option value="">All statuses</option><option>Assigned</option><option>Pending</option><option>Completed</option><option>Cancelled</option></select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Absent teacher</th><th>Substitute</th><th>Class / section</th><th>Subject</th><th>Time</th><th>Room</th><th>Status</th><th class="no-print">Action</th></tr></thead>
+          <tbody id="assignmentRows"><tr><td colspan="9" class="empty-state">Connect your Google Sheet to load the substitution schedule.</td></tr></tbody>
+        </table>
+      </div>
+      <p class="table-note">For official use, verify assignments with the school office before implementation.</p>
+    </section>
+
+    <section class="panel admin-panel">
+      <details>
+        <summary>Manage teacher directory</summary>
+        <p class="muted">Add teachers who may be absent or serve as substitutes. Each teacher can then enter their weekly class schedule above.</p>
+        <form id="teacherForm" class="teacher-form">
+          <input id="teacherName" placeholder="Teacher full name" required maxlength="100">
+          <input id="teacherDepartment" placeholder="Department / subject area" maxlength="80">
+          <button class="button button-primary" type="submit">Add teacher</button>
+        </form>
+        <div id="teacherDirectory" class="teacher-directory"></div>
+      </details>
+    </section>
+
+    <footer class="page-footer">
+      <p><strong>CALINAN NATIONAL HIGH SCHOOL</strong> · Calinan, Davao City</p>
+      <p>Teacher Substitution Plan · For authorized school personnel</p>
+    </footer>
+  </main>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

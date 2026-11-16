@@ -1,69 +1,131 @@
-const KEY='cnhsSubstitutionRecordsV1';
-const $=id=>document.getElementById(id);
-let records=[];
-try{records=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){records=[]}
-const today=new Date(); const localDate=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
-$('planDate').value=localDate;$('filterDate').value=localDate;
-function save(){localStorage.setItem(KEY,JSON.stringify(records));['planDate','period','absentTeacher'].forEach(id=>$(id)?.addEventListener('change',refreshAvailableSubs));$('period')?.addEventListener('input',refreshAvailableSubs);render();populateTeacherChoices();refreshAvailableSubs();refreshAvailableSubs()}
-function teacherNames(){return [...new Set(records.flatMap(r=>[r.absent,r.sub]).map(n=>String(n||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))}
-function populateTeacherChoices(remoteNames=[]){const names=[...new Set([...teacherNames(),...remoteNames.map(x=>typeof x==='string'?x:(x.name||x.teacherName||x.title||'' )).map(x=>String(x||'').trim()).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));const select=$('absentTeacher');const current=select.value;select.innerHTML='<option value="">Select teacher from imported list</option>'+names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');if(names.includes(current))select.value=current;const dl=$('teacherNames');if(dl)dl.innerHTML=names.map(n=>`<option value="${escapeHtml(n)}"></option>`).join('');refreshAvailableSubs()}
+(() => {
+  const $ = id => document.getElementById(id);
+  const form = $("assignmentForm");
+  const today = new Date();
+  const isoToday = new Date(today.getTime() - today.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  $("assignmentDate").value = isoToday;
+  $("availabilityDate").value = isoToday;
+  let teachers = [], assignments = [], schedules = [];
+  const demo = !window.CNHS_CONFIG?.SCRIPT_URL;
+  const endpoint = window.CNHS_CONFIG?.SCRIPT_URL || "";
+  const localKey = "cnhs-substitution-demo-v2";
+  const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const dayForDate = date => date ? new Date(date+"T12:00:00").toLocaleDateString("en-US",{weekday:"long"}) : "";
+  const norm = s => String(s||"").toLowerCase().replace(/[–—]/g,"-").replace(/\s+/g," ").trim();
 
-let remoteTeacherDirectory=[];
-function periodKey(v){return String(v||'').trim().toLowerCase().replace(/[–—]/g,'-').replace(/\s+/g,'')}
-function refreshAvailableSubs(){
- const select=$('subTeacher');if(!select)return;
- const date=$('planDate')?.value||'';const period=$('period')?.value||'';const absent=$('absentTeacher')?.value||'';const old=select.value;
- const localNames=teacherNames();const directory=remoteTeacherDirectory.length?remoteTeacherDirectory:localNames.map(name=>({name}));
- const options=directory.map(t=>typeof t==='string'?{name:t}:t).filter(t=>t.name||t.teacherName||t.title).map(t=>({...t,name:String(t.name||t.teacherName||t.title).trim()}));
- const available=options.filter(t=>t.name!==absent).filter(t=>{
-  const busy=[...(t.busySlots||[]),...(t.assignments||[]),...(t.schedule||[]).filter(x=>x.status==='busy')];
-  const hasBusy=busy.some(b=>(!b.date||b.date===date)&&(!b.period||periodKey(b.period)===periodKey(period)));
-  const localBusy=records.some(r=>r.date===date&&periodKey(r.period)===periodKey(period)&&r.sub===t.name&&r.absent!==absent);
-  const availablePeriods=t.availablePeriods||t.freePeriods;
-  const explicitlyFree=Array.isArray(availablePeriods)&&date&&period?availablePeriods.some(x=>typeof x==='string'?periodKey(x)===periodKey(period):(x.date===date&&periodKey(x.period)===periodKey(period))):true;
-  return !hasBusy&&!localBusy&&explicitlyFree;
- });
- select.innerHTML='<option value="">'+(date&&period?'Select an available substitute':'Choose date and period first')+'</option>'+available.map(t=>`<option value="${escapeHtml(t.name)}">${escapeHtml(t.name)}</option>`).join('');
- if(available.some(t=>t.name===old))select.value=old;
- if(date&&period&&available.length===0)select.options[0].textContent='No available substitute found — check SharePoint schedule';
-}
-function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function filtered(){return records.filter(r=>r.date===$('filterDate').value).sort((a,b)=>a.period.localeCompare(b.period))}
-function render(){
- const list=filtered();$('totalCount').textContent=records.length;$('todayCount').textContent=list.length;$('assignmentCount').textContent=records.length;
- $('printDate').textContent=$('filterDate').value?`Date: ${new Date($('filterDate').value+'T12:00:00').toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}`:'All dates';
- $('recordsBody').innerHTML=list.length?list.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.absent)}</td><td>${escapeHtml(r.sub)}</td><td>${escapeHtml(r.grade)}</td><td>${escapeHtml(r.subject)}</td><td>${escapeHtml(r.period)}</td><td>${escapeHtml(r.room)}</td><td>${escapeHtml(r.remarks)}</td><td class="no-print"><button class="delete-btn" data-delete="${r.id}">Delete</button></td></tr>`).join(''):'<tr><td colspan="9" class="empty">No records for this date.</td></tr>';
-}
-$('entryForm').addEventListener('submit',e=>{e.preventDefault();records.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:$('planDate').value,absent:$('absentTeacher').value.trim(),sub:$('subTeacher').value.trim(),grade:$('gradeSection').value.trim(),subject:$('subject').value.trim(),period:$('period').value.trim(),room:$('room').value.trim(),remarks:$('remarks').value.trim()});$('filterDate').value=$('planDate').value;save();$('entryForm').reset();$('planDate').value=localDate;window.location.hash='plans'});
-$('recordsBody').addEventListener('click',e=>{const id=e.target.dataset.delete;if(id&&confirm('Delete this substitution assignment?')){records=records.filter(r=>r.id!==id);save()}});
-$('filterDate').addEventListener('change',render);$('printBtn').addEventListener('click',()=>window.print());$('printTop').addEventListener('click',()=>window.print());
-function csvEscape(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
-function downloadCsv(rows,name){const csv='\ufeff'+rows.map(row=>row.map(csvEscape).join(',')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
-$('exportBtn').addEventListener('click',()=>{const rows=[['Plan date','Absent teacher','Substitute teacher','Grade / section','Subject','Time / period','Room','Reason / remarks'],...filtered().map(r=>[r.date,r.absent,r.sub,r.grade,r.subject,r.period,r.room,r.remarks])];downloadCsv(rows,`CNHS-substitution-plan-${$('filterDate').value||'all-dates'}.csv`)});
-const templateHeaders=['Plan date','Absent teacher','Substitute teacher','Grade / section','Subject','Time / period','Room','Reason / remarks'];
-$('downloadTemplate').addEventListener('click',()=>{const sample=[templateHeaders,['2026-10-21','Teacher name','Substitute name','Grade 7 - Section','Subject','8:00–8:50 AM','Room 1','Optional remarks']];if(window.XLSX){const ws=XLSX.utils.aoa_to_sheet(sample);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Substitution Plan');XLSX.writeFile(wb,'CNHS-teacher-substitution-template.xlsx')}else downloadCsv(sample,'CNHS-teacher-substitution-template.csv')});
-$('excelUpload').addEventListener('change',async e=>{const file=e.target.files&&e.target.files[0];if(!file)return;const status=$('uploadStatus');status.textContent='Reading '+file.name+'…';try{let rows;if(file.name.toLowerCase().endsWith('.csv'))rows=parseCsv(await file.text());else{if(!window.XLSX)throw new Error('Excel reader unavailable. Check internet and refresh.');const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''})}if(!rows||rows.length<2)throw new Error('No data rows found.');const norm=s=>String(s??'').trim().toLowerCase().replace(/[^a-z0-9]/g,'');const hs=rows[0].map(norm);const aliases={date:['plandate','date'],absent:['absentteacher','absent','teacherabsent'],sub:['substituteteacher','substituteteachername','substitute'],grade:['gradesection','grade','section'],subject:['subject'],period:['timeperiod','period','time'],room:['room','location'],remarks:['reasonremarks','remarks','reason']};const c={};for(const [k,a] of Object.entries(aliases))c[k]=hs.findIndex(x=>a.includes(x));if(['absent','sub','grade','subject','period'].some(k=>c[k]<0))throw new Error('Required headers missing. Please use the downloaded template.');const dateVal=v=>{if(v instanceof Date)return new Date(v.getTime()-v.getTimezoneOffset()*60000).toISOString().slice(0,10);if(typeof v==='number'&&window.XLSX){const d=XLSX.SSF.parse_date_code(v);if(d)return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`}const x=String(v??'').trim();return /^\d{4}-\d{2}-\d{2}/.test(x)?x.slice(0,10):x};const added=rows.slice(1).filter(r=>r.some(v=>String(v??'').trim())).map(r=>({id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),date:c.date>=0?dateVal(r[c.date]):$('filterDate').value||localDate,absent:String(r[c.absent]??'').trim(),sub:String(r[c.sub]??'').trim(),grade:String(r[c.grade]??'').trim(),subject:String(r[c.subject]??'').trim(),period:String(r[c.period]??'').trim(),room:c.room>=0?String(r[c.room]??'').trim():'',remarks:c.remarks>=0?String(r[c.remarks]??'').trim():''})).filter(r=>r.absent&&r.sub&&r.grade&&r.subject&&r.period);if(!added.length)throw new Error('No valid assignments found. Fill in all required columns.');records=records.concat(added);save();$('filterDate').value=added[0].date||localDate;render();status.textContent=`Imported ${added.length} assignment(s) from ${file.name}.`;e.target.value=''}catch(err){status.textContent='Import failed: '+err.message;alert('Excel import failed: '+err.message)}});
-function parseCsv(t){const out=[];let row=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'&&t[i+1]==='"'){f+='"';i++}else if(c==='"')q=false;else f+=c}else if(c==='"')q=true;else if(c===','){row.push(f);f=''}else if(c==='\n'){row.push(f.replace(/\r$/,''));out.push(row);row=[];f=''}else f+=c}if(f.length||row.length){row.push(f.replace(/\r$/,''));out.push(row)}return out}
-const savedUrl=localStorage.getItem('cnhsFormsUrl')||'';$('formUrl').value=savedUrl;function setFormLink(url){const a=$('openForm');if(/^https:\/\/(forms\.office\.com|forms\.cloud\.microsoft|forms\.microsoft\.com)\//i.test(url)){a.href=url;a.style.pointerEvents='auto';a.style.opacity='1'}else{a.href='#';a.style.pointerEvents='none';a.style.opacity='.5'}}
-setFormLink(savedUrl);$('saveFormUrl').addEventListener('click',()=>{const url=$('formUrl').value.trim();if(url&&!/^https:\/\/(forms\.office\.com|forms\.cloud\.microsoft|forms\.microsoft\.com)\//i.test(url)){alert('Please enter a valid Microsoft Forms HTTPS link.');return}localStorage.setItem('cnhsFormsUrl',url);setFormLink(url);alert(url?'Microsoft Forms link saved in this browser.':'Form link cleared.')});
-
-const savedTeacherDirectoryUrl=localStorage.getItem('cnhsTeacherDirectoryUrl')||'';if($('teacherDirectoryUrl'))$('teacherDirectoryUrl').value=savedTeacherDirectoryUrl;
-if($('loadTeachersBtn'))$('loadTeachersBtn').addEventListener('click',async()=>{const status=$('uploadStatus');const url=($('teacherDirectoryUrl').value||'').trim();if(!url){status.textContent='Add a Power Automate directory endpoint first, or upload an Excel file containing teacher names.';return}if(!/^https:\/\//i.test(url)){status.textContent='Teacher directory URL must start with HTTPS.';return}localStorage.setItem('cnhsTeacherDirectoryUrl',url);status.textContent='Loading teacher directory from SharePoint…';try{const res=await fetch(url,{method:'GET',headers:{'Accept':'application/json'}});if(!res.ok)throw new Error('HTTP '+res.status);const data=await res.json();const list=Array.isArray(data)?data:(data.teachers||data.value||data.records||[]);if(!Array.isArray(list))throw new Error('Expected a JSON array or {teachers:[...]} response');populateTeacherChoices(list);status.textContent=`Loaded ${list.length} teacher name(s) from the configured SharePoint directory.`}catch(err){status.textContent='Could not load SharePoint teacher directory: '+err.message+'. Verify the flow response, permissions, and CORS settings.'}});
-const savedFlowUrl=localStorage.getItem('cnhsFlowUrl')||'';
-if($('flowUrl')) $('flowUrl').value=savedFlowUrl;
-if($('saveFlowUrl')) $('saveFlowUrl').addEventListener('click',()=>{const url=$('flowUrl').value.trim();if(url&&!/^https:\/\//i.test(url)){alert('Enter the HTTPS URL supplied by your Power Automate flow.');return}localStorage.setItem('cnhsFlowUrl',url);alert(url?'Integration URL saved in this browser.':'Integration URL cleared.')});
-if($('saveSharePointBtn')) $('saveSharePointBtn').addEventListener('click',async()=>{const status=$('uploadStatus');const url=(localStorage.getItem('cnhsFlowUrl')||'').trim();if(!records.length){status.textContent='There are no records to save. Add an assignment or upload an Excel file first.';return}if(!url){status.textContent='SharePoint saving is not configured. Ask your Microsoft 365 administrator to set up a Power Automate flow, then paste its HTTPS trigger URL in Data Collection.';alert('Set up the Power Automate integration URL in Data Collection first. The SharePoint folder link alone cannot accept uploads.');return}if(!confirm(`Send ${records.length} substitution record(s) to the configured SharePoint flow?`))return;status.textContent='Sending records to the SharePoint flow…';try{const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'CNHS Teachers Substitution Management',sentAt:new Date().toISOString(),records})});if(!response.ok)throw new Error(`Flow returned HTTP ${response.status}. Check the flow and its permissions.`);status.textContent=`Successfully sent ${records.length} record(s) to the configured flow. Verify the items in SharePoint.`}catch(err){status.textContent='Could not confirm SharePoint save: '+err.message+' Check the flow URL, CORS settings, and run history.';alert('SharePoint save failed or could not be confirmed. Check the Power Automate flow run history.')}});
-
-['planDate','period','absentTeacher'].forEach(id=>$(id)?.addEventListener('change',refreshAvailableSubs));$('period')?.addEventListener('input',refreshAvailableSubs);render();populateTeacherChoices();refreshAvailableSubs();
-
-
-// Teaching-load schedule management
-const LOAD_KEY='cnhsTeachingLoadsV1';let teachingLoads=[];
-try{teachingLoads=JSON.parse(localStorage.getItem(LOAD_KEY)||'[]')}catch(e){teachingLoads=[]}
-function saveLoadsLocal(){localStorage.setItem(LOAD_KEY,JSON.stringify(teachingLoads));renderLoads()}
-function renderLoads(){const body=$('loadsBody');if(!body)return;body.innerHTML=teachingLoads.length?teachingLoads.map((l,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(l.teacher)}</td><td>${escapeHtml(l.day)}</td><td>${escapeHtml(l.period)}</td><td>${escapeHtml(l.subject)}</td><td>${escapeHtml(l.grade)}</td><td>${escapeHtml(l.room||'')}</td><td class="no-print"><button class="delete-btn" data-load-delete="${l.id}">Delete</button></td></tr>`).join(''):'<tr><td colspan="8" class="empty">No teaching loads added yet.</td></tr>';}
-if($('loadForm'))$('loadForm').addEventListener('submit',e=>{e.preventDefault();teachingLoads.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),teacher:$('loadTeacher').value.trim(),day:$('loadDay').value,period:$('loadPeriod').value.trim(),subject:$('loadSubject').value.trim(),grade:$('loadGrade').value.trim(),room:$('loadRoom').value.trim()});saveLoadsLocal();populateTeacherChoices();$('loadsStatus').textContent='Teaching load added to this browser. Click Save Teaching Loads to SharePoint to send it to the configured flow.';$('loadForm').reset()});
-if($('loadsBody'))$('loadsBody').addEventListener('click',e=>{const id=e.target.dataset.loadDelete;if(id&&confirm('Delete this teaching load?')){teachingLoads=teachingLoads.filter(l=>l.id!==id);saveLoadsLocal()}});
-if($('saveLoadsBtn'))$('saveLoadsBtn').addEventListener('click',async()=>{const status=$('loadsStatus');const url=(localStorage.getItem('cnhsFlowUrl')||'').trim();if(!teachingLoads.length){status.textContent='Add at least one teaching load first.';return}if(!url){status.textContent='SharePoint save is not configured. Add the Power Automate HTTPS URL in Data Collection first.';return}if(!confirm(`Send ${teachingLoads.length} teaching load(s) to SharePoint?`))return;status.textContent='Sending teaching loads…';try{const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'CNHS Teachers Substitution Management',type:'teachingLoads',sentAt:new Date().toISOString(),teachingLoads})});if(!response.ok)throw new Error('HTTP '+response.status);status.textContent=`Sent ${teachingLoads.length} teaching load(s) to the configured flow. Verify the SharePoint flow run and saved items.`}catch(err){status.textContent='Could not confirm save: '+err.message+'. Check Power Automate run history, permissions, and CORS.'}});
-if($('exportLoadsBtn'))$('exportLoadsBtn').addEventListener('click',()=>{const rows=[['Teacher name','Day of week','Period / time','Subject','Grade / section','Room'],...teachingLoads.map(l=>[l.teacher,l.day,l.period,l.subject,l.grade,l.room])];downloadCsv(rows,'CNHS-teaching-loads.csv')});
-renderLoads();
+  const jsonp = params => new Promise((resolve,reject) => {
+    const callback = "cnhs_cb_" + Math.random().toString(36).slice(2);
+    const script = document.createElement("script");
+    const timer = setTimeout(() => { cleanup(); reject(new Error("Request timed out")); },15000);
+    function cleanup(){clearTimeout(timer);delete window[callback];script.remove();}
+    window[callback] = data => {cleanup();resolve(data);};
+    script.onerror = () => {cleanup();reject(new Error("Could not reach Google Sheet. Check the Web App URL and deployment access."));};
+    script.src = endpoint + "?" + new URLSearchParams({...params,callback}).toString();
+    document.body.appendChild(script);
+  });
+  async function api(action,payload={}) {
+    if (demo) return demoApi(action,payload);
+    if (action === "bootstrap") return jsonp({action});
+    await fetch(endpoint,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,...payload})});
+    await new Promise(r=>setTimeout(r,900)); return {ok:true};
+  }
+  function demoApi(action,payload){
+    const db=JSON.parse(localStorage.getItem(localKey)||'{"teachers":[],"assignments":[],"schedules":[]}');
+    db.schedules ||= [];
+    if(action==="bootstrap") return Promise.resolve(db);
+    if(action==="addTeacher") db.teachers.push({id:crypto.randomUUID(),name:payload.name,department:payload.department});
+    if(action==="deleteTeacher") {db.teachers=db.teachers.filter(t=>t.id!==payload.id);db.schedules=db.schedules.filter(s=>s.teacherId!==payload.id);}
+    if(action==="addAssignment") db.assignments.unshift({...payload,id:crypto.randomUUID(),createdAt:new Date().toISOString()});
+    if(action==="deleteAssignment") db.assignments=db.assignments.filter(a=>a.id!==payload.id);
+    if(action==="addSchedule") db.schedules.push({...payload,id:crypto.randomUUID(),createdAt:new Date().toISOString()});
+    if(action==="deleteSchedule") db.schedules=db.schedules.filter(s=>s.id!==payload.id);
+    localStorage.setItem(localKey,JSON.stringify(db)); return Promise.resolve({ok:true});
+  }
+  function setConnection(online,message){const el=$("connectionStatus");el.textContent=message;el.className="status-pill "+(online?"online":"offline");}
+  async function load(){
+    try{const data=await api("bootstrap");teachers=data.teachers||[];assignments=data.assignments||[];schedules=data.schedules||[];setConnection(true,demo?"Demo mode":"Google Sheet connected");render();}
+    catch(err){setConnection(false,"Connection error");$("formMessage").textContent=err.message;}
+  }
+  function renderTeacherOptions(){
+    const opts=teachers.map(t=>`<option value="${escapeHtml(t.name)}">${escapeHtml(t.name)}</option>`).join("");
+    ["absentTeacher","substituteTeacher","scheduleTeacher"].forEach(id=>$(id).innerHTML='<option value="">Select teacher</option>'+opts);
+    $("teacherDirectory").innerHTML=teachers.length?teachers.map(t=>`<span class="teacher-chip">${escapeHtml(t.name)}${t.department?" · "+escapeHtml(t.department):""}<button type="button" data-delete-teacher="${escapeHtml(t.id)}" aria-label="Remove ${escapeHtml(t.name)}">×</button></span>`).join(""):'<span class="muted">No teachers added yet.</span>';
+    const periods=[...new Set(schedules.map(s=>s.period).filter(Boolean))].sort();
+    $("periodOptions").innerHTML=periods.map(p=>`<option value="${escapeHtml(p)}"></option>`).join("");
+  }
+  function availableTeachers(date,period,absentName=""){
+    if(!date||!period.trim()) return [];
+    const day=dayForDate(date), target=norm(period);
+    const busyIds=new Set(schedules.filter(s=>s.day===day&&norm(s.period)===target).map(s=>s.teacherId));
+    const busyNames=new Set(schedules.filter(s=>s.day===day&&norm(s.period)===target).map(s=>norm(s.teacher)));
+    const alreadyAssigned=new Set(assignments.filter(a=>a.date===date&&norm(a.period)===target&&a.status!=="Cancelled").map(a=>norm(a.substituteTeacher)));
+    return teachers.filter(t=>t.name!==absentName&&!busyIds.has(t.id)&&!busyNames.has(norm(t.name))&&!alreadyAssigned.has(norm(t.name)));
+  }
+  function renderAvailability(){
+    const date=$("availabilityDate").value, period=$("availabilityPeriod").value, day=dayForDate(date);
+    if(!date||!period.trim()){$("availabilityResults").innerHTML='<p class="empty-state">Enter a date and period to check teacher availability.</p>';return;}
+    const available=availableTeachers(date,period);
+    const busy=schedules.filter(s=>s.day===day&&norm(s.period)===norm(period));
+    const assigned=assignments.filter(a=>a.date===date&&norm(a.period)===norm(period)&&a.status!=="Cancelled");
+    $("availabilityResults").innerHTML=`<div class="availability-summary"><strong>${available.length} teacher(s) available</strong><span>${escapeHtml(day)}, ${escapeHtml(date)} · ${escapeHtml(period)}</span></div>`+
+      (available.length?`<div class="availability-grid">${available.map(t=>{const subjects=[...new Set(schedules.filter(s=>s.teacherId===t.id).map(s=>s.subject))];return `<article class="available-card"><strong>${escapeHtml(t.name)}</strong><span>${escapeHtml(t.department||subjects.join(", ")||"No subject profile")}</span><small>Free period · no class recorded</small></article>`;}).join("")}</div>`:'<p class="empty-state">No vacant teachers found for this period. Check the teacher schedules or try another period.')+
+      `<details class="busy-details"><summary>View teachers with classes (${busy.length})</summary><ul>${busy.map(s=>`<li>${escapeHtml(s.teacher)} — ${escapeHtml(s.subject)}${s.section?" · "+escapeHtml(s.section):""}</li>`).join("")||"<li>No class schedules recorded for this period.</li>"}</ul></details>`+
+      (assigned.length?`<p class="muted">Already assigned as substitute: ${assigned.map(a=>escapeHtml(a.substituteTeacher)).join(", ")}</p>`:"");
+  }
+  function render(){
+    renderTeacherOptions();
+    const dateFilter=$("filterDate").value, query=$("filterText").value.toLowerCase(), status=$("filterStatus").value;
+    const filtered=assignments.filter(a=>(!dateFilter||a.date===dateFilter)&&(!status||a.status===status)&&(!query||[a.absentTeacher,a.substituteTeacher,a.section,a.subject,a.period,a.room].join(" ").toLowerCase().includes(query)));
+    $("assignmentRows").innerHTML=filtered.length?filtered.map(a=>`<tr><td>${escapeHtml(a.date)}</td><td>${escapeHtml(a.absentTeacher)}</td><td><strong>${escapeHtml(a.substituteTeacher)}</strong></td><td>${escapeHtml(a.section)}</td><td>${escapeHtml(a.subject)}</td><td>${escapeHtml(a.period)}</td><td>${escapeHtml(a.room||"—")}</td><td><span class="tag ${String(a.status||"").toLowerCase()}">${escapeHtml(a.status||"Assigned")}</span></td><td class="no-print"><button class="small-action" data-delete-assignment="${escapeHtml(a.id)}">Delete</button></td></tr>`).join(""):'<tr><td colspan="9" class="empty-state">No substitution assignments match your filters.</td></tr>';
+    $("scheduleRows").innerHTML=schedules.length?schedules.map(s=>`<tr><td>${escapeHtml(s.teacher)}</td><td>${escapeHtml(s.day)}</td><td>${escapeHtml(s.period)}</td><td>${escapeHtml(s.subject)}</td><td>${escapeHtml(s.section||"—")}</td><td>${escapeHtml(s.room||"—")}</td><td class="no-print"><button class="small-action" data-delete-schedule="${escapeHtml(s.id)}">Delete</button></td></tr>`).join(""):'<tr><td colspan="7" class="empty-state">No teacher schedules added yet.</td></tr>';
+    $("teacherCount").textContent=teachers.length;$("todayCount").textContent=assignments.filter(a=>a.date===isoToday&&a.status!=="Cancelled").length;$("attentionCount").textContent=assignments.filter(a=>a.status==="Pending").length;
+    renderAvailability(); updateSubstituteOptions();
+  }
+  function updateSubstituteOptions(){
+    const date=$("assignmentDate").value, period=$("assignmentPeriod").value, absent=$("absentTeacher").value, select=$("substituteTeacher");
+    const previous=select.value;
+    const candidates=availableTeachers(date,period,absent);
+    select.innerHTML='<option value="">Select vacant teacher</option>'+candidates.map(t=>`<option value="${escapeHtml(t.name)}">${escapeHtml(t.name)}</option>`).join("");
+    if(candidates.some(t=>t.name===previous))select.value=previous;
+    select.disabled=Boolean(date&&period.trim()&&candidates.length===0);
+    if(date&&period.trim()&&candidates.length===0) $("formMessage").textContent="No vacant substitute found for the selected date and period. Check the schedules below.";
+  }
+  form.addEventListener("submit",async e=>{
+    e.preventDefault();const data=Object.fromEntries(new FormData(form).entries());
+    if(data.absentTeacher===data.substituteTeacher){$("formMessage").textContent="The absent teacher and substitute must be different.";return;}
+    const valid=availableTeachers(data.date,data.period,data.absentTeacher).some(t=>t.name===data.substituteTeacher);
+    if(!valid){$("formMessage").textContent="That teacher is not marked vacant for the selected date and period. Refresh availability and choose a vacant teacher.";return;}
+    try{$("formMessage").textContent="Saving…";await api("addAssignment",data);form.reset();$("assignmentDate").value=isoToday;$("formMessage").textContent="Assignment saved.";await load();}
+    catch(err){$("formMessage").textContent=err.message;}
+  });
+  $("teacherForm").addEventListener("submit",async e=>{
+    e.preventDefault();const name=$("teacherName").value.trim(),department=$("teacherDepartment").value.trim();if(!name)return;
+    if(teachers.some(t=>t.name.toLowerCase()===name.toLowerCase())){$("formMessage").textContent="That teacher is already in the directory.";return;}
+    try{await api("addTeacher",{name,department});$("teacherName").value="";$("teacherDepartment").value="";await load();}catch(err){$("formMessage").textContent=err.message;}
+  });
+  $("scheduleForm").addEventListener("submit",async e=>{
+    e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget).entries());
+    const teacher=teachers.find(t=>t.name===data.teacher);if(!teacher){$("scheduleMessage").textContent="Please select a teacher from the directory.";return;}
+    data.teacherId=teacher.id;
+    if(schedules.some(s=>s.teacherId===data.teacherId&&s.day===data.day&&norm(s.period)===norm(data.period))){$("scheduleMessage").textContent="This teacher already has a schedule entry for that day and period.";return;}
+    try{$("scheduleMessage").textContent="Saving schedule…";await api("addSchedule",data);e.currentTarget.reset();$("scheduleMessage").textContent="Class schedule saved.";await load();}catch(err){$("scheduleMessage").textContent=err.message;}
+  });
+  document.addEventListener("click",async e=>{
+    const teacher=e.target.closest("[data-delete-teacher]"), assignment=e.target.closest("[data-delete-assignment]"), schedule=e.target.closest("[data-delete-schedule]");
+    try{if(teacher&&confirm("Remove this teacher and their class schedule entries?")){await api("deleteTeacher",{id:teacher.dataset.deleteTeacher});await load();}
+      if(assignment&&confirm("Delete this substitution assignment?")){await api("deleteAssignment",{id:assignment.dataset.deleteAssignment});await load();}
+      if(schedule&&confirm("Delete this class schedule entry?")){await api("deleteSchedule",{id:schedule.dataset.deleteSchedule});await load();}}
+    catch(err){$("formMessage").textContent=err.message;}
+  });
+  ["filterDate","filterText","filterStatus"].forEach(id=>$(id).addEventListener("input",render));
+  ["availabilityDate","availabilityPeriod"].forEach(id=>$(id).addEventListener("input",renderAvailability));
+  ["assignmentDate","assignmentPeriod","absentTeacher"].forEach(id=>$(id).addEventListener("input",updateSubstituteOptions));
+  $("refreshBtn").addEventListener("click",load);
+  $("printBtn").addEventListener("click",()=>window.print());
+  $("printSubstitutionBtn").addEventListener("click",()=>{
+    document.body.classList.add("print-substitution-only");
+    window.print();
+  });
+  window.addEventListener("afterprint",()=>document.body.classList.remove("print-substitution-only"));
+  load();
+})();
